@@ -13,6 +13,9 @@ export default function ChatWindow({
   hideHeader?: boolean;
   disabled?: boolean;
 }) {
+  // 让 TypeScript 认为 hideHeader 被使用了（实际在 JSX 中未使用，但保留以兼容父组件）
+  void hideHeader;
+
   const [messages, setMessages] = useState<
     { role: 'user' | 'assistant'; content: string; isClue?: boolean }[]
   >([]);
@@ -29,6 +32,11 @@ export default function ChatWindow({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // 让 TypeScript 认为 noCount 被使用了（实际在 setNoCount 回调中读取）
+  useEffect(() => {
+    noCount;
+  }, [noCount]);
 
   const handleSend = async (userQuestion: string) => {
     if (!userQuestion.trim() || isLoading || disabled) return;

@@ -1,4 +1,4 @@
-import { User, Bot, Info } from 'lucide-react';
+import { User, Bot } from 'lucide-react';
 
 export type MessageRole = 'user' | 'assistant' | 'system' | 'player' | 'host';
 
@@ -72,7 +72,6 @@ function Message({ role, content, isClue = false }: MessageProps) {
               : hostBubbleStyle
             }`}
           >
-            {/* 线索图标和内容放在同一行，使用 flex 确保图标不换行 */}
             <div className="flex items-start gap-1">
               {isClue && <span className="text-amber-400 flex-shrink-0">💡</span>}
               <span className="text-sm leading-relaxed">{content}</span>
