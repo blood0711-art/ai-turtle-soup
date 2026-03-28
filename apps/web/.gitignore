@@ -1,3 +1,8 @@
+# 1. 敏感信息（最重要！）
+.env
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log
