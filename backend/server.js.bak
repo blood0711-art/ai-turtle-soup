@@ -1,0 +1,76 @@
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// 中间件
+app.use(cors());
+app.use(express.json());
+
+// 健康检查
+app.get('/', (req, res) => {
+  res.json({ message: '海龟汤 AI 服务已启动' });
+});
+
+// 测试接口
+app.get('/api/test', (req, res) => {
+  res.json({ message: '后端服务运行正常', timestamp: new Date().toISOString() });
+});
+
+// AI 对话接口
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { question, story, history } = req.body;
+
+    if (!question || !story || !story.bottom) {
+      return res.status(400).json({ error: '缺少必要参数：question, story.bottom' });
+    }
+
+    const systemPrompt = `你是一个海龟汤游戏的主持人。游戏规则：玩家会针对谜面提问，你只能根据以下“真相”回答“是”、“不是”或“与此无关”。不要添加任何其他文字，不要解释，不要使用标点符号。
+
+真相：${story.bottom}`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...(history || []),
+      { role: 'user', content: question }
+    ];
+
+    const response = await fetch(process.env.DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages,
+        temperature: 0.0,
+        max_tokens: 5,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`DeepSeek API 错误: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let reply = data.choices?.[0]?.message?.content?.trim() || '与此无关';
+    reply = reply.replace(/[。？！，.?!,]/g, '');
+
+    let finalAnswer = '与此无关';
+    if (reply.includes('不') || reply.includes('否')) finalAnswer = '不是';
+    else if (reply.includes('是')) finalAnswer = '是';
+
+    res.json({ answer: finalAnswer });
+  } catch (error) {
+    console.error('AI 请求失败:', error);
+    res.status(500).json({ error: '服务器内部错误，请稍后重试' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});

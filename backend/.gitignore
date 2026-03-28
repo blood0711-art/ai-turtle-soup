@@ -1,0 +1,17 @@
+# 1. 敏感信息（最重要！）
+.env
+.env.local
+.env.*.local
+
+# 2. 依赖库
+node_modules/
+dist/
+build/
+.cache/
+
+# 3. 操作系统与编辑器残留
+.DS_Store
+.vscode/
+.idea/
+*.log
+npm-debug.log*
