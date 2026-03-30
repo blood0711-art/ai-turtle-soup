@@ -23,8 +23,11 @@ export async function askAI(
     }
   }
 
+  // 从环境变量获取后端 API 地址，如果未设置则回退到相对路径（本地开发用）
+  const API_BASE_URL = import.meta.env.VITE_AI_API_URL || '/api/chat';
+
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +36,7 @@ export async function askAI(
         question,
         story,
         history,
-        mode: options?.mode, // 传递模式
+        mode: options?.mode,
       }),
     });
 
