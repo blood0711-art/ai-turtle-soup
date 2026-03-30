@@ -55,6 +55,7 @@ app.post('/api/chat', async (req, res) => {
   let maxTokens = 5;
 
   if (mode === 'clue') {
+    // 线索模式（保持不变）
     systemPrompt = `你是一个海龟汤游戏的主持人。玩家已经连续三次猜错，请你根据以下“真相”给出一个简短的提示，帮助玩家继续推理。提示必须非常含蓄，不能直接说出任何具体事实、人名、物品或事件。你可以使用比喻、反问或暗示，让玩家自己去联想。输出一句话，不要使用标点符号。
 
 真相：${story.bottom}
@@ -63,19 +64,22 @@ app.post('/api/chat', async (req, res) => {
     temperature = 0.5;
     maxTokens = 60;
   } else {
+    // 通用版普通模式提示词（无故事特例）
     systemPrompt = `你是一个海龟汤游戏的主持人。你必须严格按照以下“真相”回答玩家的提问。回答只能是“是”、“不是”或“与此无关”中的一个词，不要添加任何其他文字、解释或标点符号。
 
 真相：${story.bottom}
 
 判断规则：
-- 如果玩家的问题与真相完全一致，回答“是”。
-- 如果玩家的问题与真相矛盾，回答“不是”。
-- 如果玩家的问题与真相无关，回答“与此无关”。`;
+- 如果玩家的问题与真相中明确描述的任何事实一致（包括同义表述、合理推断），回答“是”。
+- 如果玩家的问题与真相中明确描述的事实相反或矛盾，回答“不是”。
+- 如果玩家的问题与真相中的任何事实都不相关，回答“与此无关”。
+
+注意：真相中可能包含专业术语或特定概念，玩家的问题可能使用日常语言。请将玩家的问题与真相中的事实进行合理关联，但不要超出真相范围。`;
     temperature = 0.0;
-    maxTokens = 5;
+    maxTokens = 10; // 稍微增加，避免标点导致截断
   }
 
-  // 构造消息列表：系统提示 + 历史 + 当前问题（线索模式没有问题）
+  // 构造消息列表
   const messages = [
     { role: 'system', content: systemPrompt },
     ...(history || []),
@@ -106,15 +110,12 @@ app.post('/api/chat', async (req, res) => {
 
     const data = await response.json();
     let reply = data.choices?.[0]?.message?.content?.trim() || '与此无关';
-    // 记录原始回复，便于调试
     console.log(`[${req.id}] DeepSeek raw reply: ${reply}`);
 
     if (mode === 'clue') {
-      // 线索模式简单清理标点后直接返回
       reply = reply.replace(/[。？！，.?!,]/g, '');
       res.json({ answer: reply });
     } else {
-      // 普通模式清洗标点并精确映射
       reply = reply.replace(/[。？！，.?!,]/g, '').trim();
       let finalAnswer = '与此无关';
       if (reply === '不是') finalAnswer = '不是';
